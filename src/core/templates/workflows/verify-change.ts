@@ -169,7 +169,28 @@ Use clear markdown with:
 - Grouped lists for issues (CRITICAL/WARNING/SUGGESTION)
 - Code references in format: \`file.ts:123\`
 - Specific, actionable recommendations
-- No vague suggestions like "consider reviewing"`,
+- No vague suggestions like "consider reviewing"
+
+**SDD-Specific Verification (sdd-spec-driven schema only)**
+
+If the change uses the \`sdd-spec-driven\` schema (check \`schemaName\` from status output):
+
+1. **Before the standard verification**, run:
+   \`\`\`bash
+   openspec verify --sdd --change "<name>"
+   \`\`\`
+   This produces a structured PASS/FAIL/WARN report from \`verification.md\`.
+
+2. **Use the structured report as the verification foundation**:
+   - FAIL items → map to CRITICAL issues
+   - WARN items → map to WARNING issues
+   - PASS items → confirm in Completeness dimension
+
+3. **Then run standard Completeness/Correctness/Coherence checks** on top.
+   The SDD report covers checklist-based verification; standard checks add
+   code-level analysis (requirement keyword search, design adherence, pattern consistency).
+
+4. **Include the SDD report** in the final output as a separate section before the standard scorecard.`,
     license: 'MIT',
     compatibility: 'Requires openspec CLI.',
     metadata: { author: 'openspec', version: '1.0' },

@@ -958,4 +958,20 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
       },
     ],
   },
+  {
+    name: 'verify',
+    description: 'Run SDD structured verification against a change',
+    flags: [
+      {
+        name: 'sdd',
+        description: 'Run SDD PASS/FAIL/WARN verification from verification.md',
+      },
+      {
+        name: 'change',
+        description: 'Change name to verify',
+        takesValue: true,
+      },
+      COMMON_FLAGS.json,
+    ],
+  },
 ];

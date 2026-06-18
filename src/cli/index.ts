@@ -9,6 +9,7 @@ import { UpdateCommand } from '../core/update.js';
 import { ListCommand } from '../core/list.js';
 import { ArchiveCommand } from '../core/archive.js';
 import { ViewCommand } from '../core/view.js';
+import { runSddVerification, formatVerificationReport } from '../core/verify-sdd.js';
 import { registerSpecCommand } from '../commands/spec.js';
 import { ChangeCommand } from '../commands/change.js';
 import { ValidateCommand } from '../commands/validate.js';
@@ -564,6 +565,44 @@ setCmd
   .action(async (name: string, options: SetChangeOptions) => {
     try {
       await setChangeCommand(name, options);
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// Verify command (SDD structured verification)
+program
+  .command('verify')
+  .description('Run SDD structured verification against a change')
+  .option('--sdd', 'Run SDD PASS/FAIL/WARN verification from verification.md')
+  .option('--change <name>', 'Change name to verify')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { sdd?: boolean; change?: string; json?: boolean }) => {
+    try {
+      if (!options.sdd) {
+        console.log('Use --sdd flag to run SDD structured verification.');
+        console.log('Example: openspec verify --sdd --change "my-change"');
+        process.exit(1);
+      }
+
+      if (!options.change) {
+        console.log('--change <name> is required for verify.');
+        process.exit(1);
+      }
+
+      const projectRoot = process.cwd();
+      const changeDir = path.join(projectRoot, 'openspec', 'changes', options.change);
+      const report = runSddVerification(changeDir, projectRoot);
+
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        console.log(formatVerificationReport(report));
+      }
+
+      process.exit(report.summary.fail > 0 ? 1 : 0);
     } catch (error) {
       console.log();
       ora().fail(`Error: ${(error as Error).message}`);

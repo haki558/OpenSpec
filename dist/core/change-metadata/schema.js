@@ -24,5 +24,7 @@ export const ChangeMetadataSchema = z.object({
     goal: z.string().min(1).optional(),
     affected_areas: z.array(z.string().min(1)).optional(),
     initiative: InitiativeLinkSchema.optional(),
+    assignee: z.string().min(1).optional(),
+    reviewer: z.string().min(1).optional(),
 });
 //# sourceMappingURL=schema.js.map

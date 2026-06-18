@@ -1,0 +1,87 @@
+# SDD Config Template
+# Copy this to openspec/config.yaml and customize for your project.
+# See: docs/lennox-sdd.md for field descriptions.
+
+schema: sdd-spec-driven
+
+# --- Project Constitution ---
+# Structured context injected into all artifact generation prompts.
+# Replace placeholders with your project's actual values.
+
+context: |
+  # Project Identity
+  Project: <project-name>
+  Domain: <business-domain — e.g., fintech, healthcare, e-commerce>
+  Users: <who uses this system — e.g., internal ops team, external customers>
+
+  # Tech Stack
+  Languages: <e.g., TypeScript, Python, Java>
+  Frameworks: <e.g., React, Next.js, Spring Boot>
+  Versions: <e.g., Node 20, Java 21>
+  Key Libraries: <e.g., Prisma, Zod, Commander>
+  Package Manager: <e.g., pnpm, npm, yarn, maven>
+
+  # Domain Glossary
+  # Terms with project-specific meanings that disambiguate for the AI.
+  # Format: Term — Definition
+  # Example:
+  #   Tenant — An organization account that owns multiple users
+  #   Workspace — A project container within a tenant
+  #   Artifact — A generated document in the OpenSpec workflow (not a build artifact)
+
+  # Architecture Constraints
+  API Style: <e.g., REST with OpenAPI 3.1, GraphQL, gRPC>
+  Package Structure: <e.g., feature-based (src/features/), layer-based (src/controllers/)>
+  Auth Model: <e.g., JWT with RBAC, OAuth2 + OIDC, API keys>
+  DB Naming: <e.g., snake_case tables, singular nouns, prefixed with module name>
+
+  # Boundaries (MUST NOTs)
+  # Forbidden patterns, libraries, and practices.
+  # Format: MUST NOT <description>
+  # Example:
+  #   MUST NOT use any ORM other than Prisma
+  #   MUST NOT store secrets in environment variables without encryption
+  #   MUST NOT use default exports in TypeScript
+  #   MUST NOT bypass auth middleware for any API endpoint
+  #   MUST NOT use console.log in production code (use structured logger)
+
+# --- Per-Artifact Rules ---
+# Injected into each artifact's generation prompt.
+# These enforce SDD conventions regardless of which AI tool generates the artifact.
+
+rules:
+  proposal:
+    - MUST include Affected Domains section listing which openspec/specs/{domain}/ areas are touched
+    - MUST have explicit In Scope (numbered deliverables) and Out of Scope sections
+    - MUST include Clarifications section with AI-generated questions and human answers inline
+    - Clarification depth self-regulates — simple (2-3 Qs), medium (5-8 Qs), complex (8-15 Qs)
+    - MUST include Decisions section capturing key choices with rationale
+
+  specs:
+    - Every requirement MUST be tagged with a unique [BR-#] identifier
+    - Every scenario MUST be tagged with a unique [AC-#] identifier
+    - Scenarios MUST use Given/When/Then format with concrete values (not vague descriptions)
+    - MUST use RFC 2119 keywords — MUST/SHALL for mandatory, SHOULD for recommended, MAY for optional
+    - Every business rule [BR-#] MUST have at least one edge case scenario (error path, boundary, invalid input)
+    - "Brownfield rule: if no openspec/specs/{domain}/spec.md exists, MUST create [BASELINE] section first documenting current behavior from code scan, then [NEW] requirements on top"
+
+  design:
+    - MUST include File Manifest Creates table with columns (Path, Purpose, Traces To BR-#/AC-#)
+    - MUST include File Manifest Modifies table with columns (Path, What Changes, Traces To BR-#/AC-#)
+    - MUST include Do-Not-Touch list — files explicitly outside scope with reason
+    - Architecture decisions MUST include rationale citing BR-# and rejected alternatives
+    - Every file in manifests MUST trace to at least one BR-# or AC-#
+
+  tasks:
+    - Every task MUST include traceability — traces to BR-#/AC-# from specs
+    - Every task MUST specify exact files to create or modify
+    - Every task MUST specify test artifact names — exact test class + method name + expected result
+    - Tasks MUST be grouped by dependency layer (Data → Service → API → UI)
+    - MUST include Dependency Order section specifying group execution order
+
+  verification:
+    - Check depth MUST scale proportionally to actual scope — count AC-#, BR-#, files from specs+design+tasks
+    - "Small scope (≤3 AC-#, ≤5 files): AC tests + code traceability + constitution compliance only"
+    - "Medium scope (≤10 AC-#, ≤15 files): add API schema validation + business rule coverage"
+    - "Large scope (>10 AC-# or >15 files): add data schema validation + boundary scan"
+    - MUST NOT apply large-scope checks to small changes — avoid verification overhead

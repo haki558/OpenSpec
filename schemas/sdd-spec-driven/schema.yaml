@@ -1,0 +1,202 @@
+name: sdd-spec-driven
+version: 1
+description: SDD-adapted OpenSpec workflow — proposal → specs → design → tasks → verification
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial proposal establishing WHY the change is needed, with inline clarifications
+    template: proposal.md
+    instruction: |
+      Create the proposal document that establishes WHY this change is needed and captures
+      all clarifications inline — no separate interview artifact.
+
+      Sections:
+      - **Intent**: Problem statement in 1-2 sentences. What problem does this solve? Why now?
+      - **Scope**:
+        - **In Scope**: Numbered list of specific deliverables
+        - **Out of Scope**: Explicit exclusions (what this change does NOT do)
+      - **Affected Domains**: Which `openspec/specs/{domain}/` areas are touched by this change.
+        List each domain with a brief note on what changes.
+      - **Blast Radius**: Downstream components, services, or consumers affected by this change.
+        Critical for brownfield — identifies what might break.
+      - **Capabilities**: Identify which specs will be created or modified:
+        - **New Capabilities**: List capabilities being introduced. Each becomes a new `specs/<name>/spec.md`. Use kebab-case names.
+        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Check `openspec/specs/` for existing spec names.
+      - **Clarifications**: AI probes for gaps in the proposal. Human answers inline.
+        Depth self-regulates based on scope complexity:
+        - Simple scope (1-2 deliverables): 2-3 clarifying questions
+        - Medium scope (3-5 deliverables): 5-8 clarifying questions
+        - Complex scope (6+ deliverables): 8-15 clarifying questions covering edge cases, failure modes, migration
+        Format each as: `**Q:** <question>` / `**A:** <answer>`
+      - **Decisions**: Key choices made during clarification, with rationale.
+        Serves as a reviewer brief — someone reading only this section understands the "why" behind each choice.
+        Format: `**Decision:** <what was decided>` / `**Rationale:** <why>`
+
+      Keep concise (1-3 pages). Focus on WHY and WHAT, not HOW.
+      This is the foundation — specs, design, tasks, and verification all build on this.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Detailed specifications with BR-# and AC-# traceability in delta format
+    template: spec.md
+    instruction: |
+      Create specification files that define WHAT the system should do using structured
+      traceability and RFC 2119 normative language.
+
+      Create one spec file per capability listed in the proposal's Capabilities section.
+      - New capabilities: use the exact kebab-case name from the proposal (specs/<capability>/spec.md).
+      - Modified capabilities: use the existing spec folder name from openspec/specs/<capability>/.
+
+      **Brownfield Rule**: If this change targets a domain with no existing
+      `openspec/specs/{domain}/spec.md`, you MUST first create a `[BASELINE]` section
+      documenting current behavior from code scan, then apply `[NEW]` requirements on top.
+
+      Delta operations (use ## headers):
+      - **ADDED Requirements**: New capabilities tagged `[NEW]`
+      - **MODIFIED Requirements**: Changed behavior — MUST include full updated content
+      - **REMOVED Requirements**: Deprecated features — MUST include **Reason** and **Migration**
+      - **RENAMED Requirements**: Name changes only — use FROM:/TO: format
+
+      Format requirements:
+      - Every requirement: `### Requirement: <name> [BR-#]` — unique business rule ID
+      - Use RFC 2119 keywords: MUST/SHALL for mandatory, SHOULD for recommended, MAY for optional
+      - Every scenario: `#### Scenario: <name> [AC-#]` — unique acceptance criteria ID
+      - **CRITICAL**: Scenarios MUST use exactly 4 hashtags (`####`)
+      - Every scenario uses Given/When/Then with concrete values (not vague):
+        - **GIVEN** <precondition with specific data>
+        - **WHEN** <action with specific input>
+        - **THEN** <expected outcome with specific output>
+      - Every business rule `[BR-#]` MUST have at least one scenario
+      - Every business rule MUST have edge case scenarios (error paths, boundary values, invalid input)
+
+      MODIFIED requirements workflow:
+      1. Locate the existing requirement in openspec/specs/<capability>/spec.md
+      2. Copy the ENTIRE requirement block (from `### Requirement:` through all scenarios)
+      3. Paste under `## MODIFIED Requirements` and edit to reflect new behavior
+      4. Ensure header text matches exactly (whitespace-insensitive)
+
+      Specs should be testable — each `[AC-#]` scenario is a potential test case.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical design with architecture decisions, file manifests, and traceability
+    template: design.md
+    instruction: |
+      Create the design document that explains HOW to implement the change.
+      Design depends on specs — specs MUST exist before design begins.
+
+      When to include design.md (create only if any apply):
+      - Cross-cutting change (multiple services/modules) or new architectural pattern
+      - New external dependency or significant data model changes
+      - Security, performance, or migration complexity
+      - Ambiguity that benefits from technical decisions before coding
+
+      Sections:
+      - **Technical Approach**: High-level implementation strategy (1-2 paragraphs)
+      - **Architecture Decisions**: Key technical choices with rationale.
+        Format for each decision:
+        - **Decision**: What was decided
+        - **Rationale**: Why this approach (cite BR-# from specs)
+        - **Alternatives Rejected**: What was considered and why not
+      - **File Manifest — Creates**: Table of new files
+        | Path | Purpose | Traces To |
+        |------|---------|-----------|
+        | src/foo.ts | Implements X | BR-1, AC-1 |
+      - **File Manifest — Modifies**: Table of modified files
+        | Path | What Changes | Traces To |
+        |------|-------------|-----------|
+        | src/bar.ts | Add Y method | BR-2, AC-3 |
+      - **Do-Not-Touch List**: Files explicitly outside scope. Any file NOT in the
+        creates/modifies manifests is implicitly DNT. List files that might seem related
+        but must not be changed, with reason.
+      - **Data Flow**: Sequence diagram or narrative description of how data moves
+        through the system for the primary use case.
+
+      Reference specs for WHAT needs building. Every file in the manifest must trace
+      to at least one BR-# or AC-#.
+    requires:
+      - specs
+
+  - id: tasks
+    generates: tasks.md
+    description: Implementation checklist grouped by dependency layer with full traceability
+    template: tasks.md
+    instruction: |
+      Create the task list that breaks down implementation work into dependency-ordered layers.
+
+      **IMPORTANT: Follow the template below exactly.** The apply phase parses
+      checkbox format to track progress. Tasks not using `- [ ]` won't be tracked.
+
+      Structure:
+      - Group tasks by dependency layer: Data → Service → API → UI
+      - Each task MUST be a checkbox with structured metadata:
+        `- [ ] X.Y <title> | traces: BR-#, AC-# | files: path/to/file.ts | tests: TestClass.testMethod → expected`
+      - Tasks should be small enough to complete in one session
+      - Order tasks by dependency within and across groups
+
+      Dependency Ordering:
+      - After task groups, include a `## Dependency Order` section
+      - Specify which groups must complete before others start
+      - Format: `Group X → Group Y → Group Z` (left must finish before right starts)
+
+      Reference specs for WHAT needs to be built, design for HOW to build it.
+      Every task must trace to at least one BR-# or AC-# from specs.
+      Each task should be verifiable — you know when it's done.
+    requires:
+      - specs
+      - design
+
+  - id: verification
+    generates: verification.md
+    description: Verification checklist that auto-scales depth based on change scope
+    template: verification.md
+    instruction: |
+      Create the verification checklist that validates the implementation is complete,
+      correct, and compliant. The depth of checks auto-scales based on the actual scope
+      of the change — do NOT apply large-scope checks to small changes.
+
+      **Step 1: Determine Scope Size**
+      Count from the specs, design, and tasks artifacts:
+      - Number of AC-# acceptance criteria
+      - Number of files in the design file manifests (creates + modifies)
+
+      **Scope Classification**:
+      - **Small** (≤3 AC-#s AND ≤5 files): Core checks only
+      - **Medium** (≤10 AC-#s AND ≤15 files): Core + extended checks
+      - **Large** (>10 AC-#s OR >15 files): Core + extended + comprehensive checks
+
+      **Step 2: Generate Check Sections**
+
+      **Core Checks (all scopes)**:
+      - AC-# → Test Mapping Table: Every AC-# must map to a test name
+      - Code Traceability Checklist: Files in manifest exist, no extra files created, no Do-Not-Touch violations
+      - Constitution Compliance Checklist: Naming conventions followed, approved libraries only, no forbidden patterns
+
+      **Extended Checks (medium + large scope)**:
+      - API Schema Table: endpoint, method, path, request body, response body, auth requirement
+      - Business Rule Coverage Table: BR-#, implemented (Y/N), happy path tested (Y/N), edge case tested (Y/N)
+
+      **Comprehensive Checks (large scope only)**:
+      - Data Schema Table: entity, table name, fields, constraints, migration required
+      - Boundary Scan Checklist: input validation present, no secrets in code, no stack traces leaked, error messages safe
+
+      Each check item uses checkbox format: `- [ ] <check description>`
+      so verification can be tracked the same way tasks are tracked.
+
+      Reference specs for BR-#/AC-# IDs, design for file manifests, tasks for test names.
+    requires:
+      - specs
+      - tasks
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read context files, work through pending tasks, mark complete as you go.
+    Pause if you hit blockers or need clarification.
+    Every task references BR-#/AC-# from specs — verify your implementation matches
+    the acceptance criteria before marking complete.

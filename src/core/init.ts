@@ -20,6 +20,7 @@ import {
 import { PALETTE } from './styles/palette.js';
 import { isInteractive } from '../utils/interactive.js';
 import { serializeConfig } from './config-prompts.js';
+import { listSchemas, getSchemaDir } from './artifact-graph/resolver.js';
 import {
   generateCommands,
   CommandAdapterRegistry,
@@ -53,7 +54,7 @@ const { version: OPENSPEC_VERSION } = require('../../package.json');
 // Constants
 // -----------------------------------------------------------------------------
 
-const DEFAULT_SCHEMA = 'spec-driven';
+const DEFAULT_SCHEMA = 'sdd-spec-driven';
 
 const PROGRESS_SPINNER = {
   interval: 80,
@@ -611,11 +612,75 @@ export class InitCommand {
     }
 
     try {
-      const yamlContent = serializeConfig({ schema: DEFAULT_SCHEMA });
+      // Interactive schema selection with SDD pre-selected
+      const selectedSchema = await this.selectSchema();
+      const yamlContent = this.getConfigContent(selectedSchema);
       await FileSystemUtils.writeFile(configPath, yamlContent);
+
+      // Scaffold active-work.yaml for SDD schema
+      if (selectedSchema === 'sdd-spec-driven') {
+        await this.scaffoldActiveWork(openspecPath);
+      }
+
       return 'created';
     } catch {
       return 'skipped';
+    }
+  }
+
+  private async selectSchema(): Promise<string> {
+    if (!this.canPromptInteractively()) {
+      return DEFAULT_SCHEMA;
+    }
+
+    const available = listSchemas();
+    if (available.length <= 1) {
+      return DEFAULT_SCHEMA;
+    }
+
+    const { select } = await import('@inquirer/prompts');
+    const selected = await select({
+      message: 'Select workflow schema:',
+      choices: available.map((name) => ({
+        name,
+        value: name,
+        description: name === DEFAULT_SCHEMA ? '(default)' : undefined,
+      })),
+      default: DEFAULT_SCHEMA,
+    });
+
+    return selected;
+  }
+
+  private getConfigContent(schemaName: string): string {
+    // For SDD schema, use the bundled config-template if available
+    if (schemaName === 'sdd-spec-driven') {
+      const schemaDir = getSchemaDir(schemaName);
+      if (schemaDir) {
+        const templatePath = path.join(schemaDir, 'config-template.yaml');
+        if (fs.existsSync(templatePath)) {
+          return fs.readFileSync(templatePath, 'utf-8');
+        }
+      }
+    }
+    return serializeConfig({ schema: schemaName });
+  }
+
+  private async scaffoldActiveWork(openspecPath: string): Promise<void> {
+    const activeWorkPath = path.join(openspecPath, 'active-work.yaml');
+    if (fs.existsSync(activeWorkPath)) {
+      return;
+    }
+
+    const schemaDir = getSchemaDir('sdd-spec-driven');
+    if (!schemaDir) return;
+
+    // Look for active-work template in lennox/ directory (sibling to schemas/)
+    const packageRoot = path.join(schemaDir, '..', '..');
+    const templatePath = path.join(packageRoot, 'lennox', 'active-work-template.yaml');
+    if (fs.existsSync(templatePath)) {
+      const content = fs.readFileSync(templatePath, 'utf-8');
+      await FileSystemUtils.writeFile(activeWorkPath, content);
     }
   }
 

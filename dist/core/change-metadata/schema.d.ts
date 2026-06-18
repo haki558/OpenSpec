@@ -13,6 +13,8 @@ export declare const ChangeMetadataSchema: z.ZodObject<{
         store: z.ZodString;
         id: z.ZodString;
     }, z.core.$strict>>;
+    assignee: z.ZodOptional<z.ZodString>;
+    reviewer: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export type ChangeMetadata = z.infer<typeof ChangeMetadataSchema>;
 //# sourceMappingURL=schema.d.ts.map

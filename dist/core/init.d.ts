@@ -28,6 +28,9 @@ export declare class InitCommand {
     private createDirectoryStructure;
     private generateSkillsAndCommands;
     private createConfig;
+    private selectSchema;
+    private getConfigContent;
+    private scaffoldActiveWork;
     private displaySuccessMessage;
     private startSpinner;
     private removeSkillDirs;

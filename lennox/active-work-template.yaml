@@ -1,0 +1,26 @@
+# Active Work Tracker
+# Location: openspec/active-work.yaml
+# Convention-based (not tooling-enforced) — readable by AI and teammates.
+# Update manually when starting, handing off, or completing changes.
+
+# Active changes across the project
+changes:
+  # - name: <change-folder-name>
+  #   assignee: <github-username or name>
+  #   reviewer: <github-username or name>
+  #   domains:
+  #     - <openspec/specs/{domain}/ being touched>
+  #   status: proposing | speccing | designing | implementing | verifying | done
+  #   started: YYYY-MM-DD
+  #   notes: <optional context for teammates>
+
+  # Example:
+  # - name: add-user-export
+  #   assignee: jdoe
+  #   reviewer: asmith
+  #   domains:
+  #     - data-export
+  #     - user-management
+  #   status: implementing
+  #   started: 2026-06-18
+  #   notes: Blocked on DB migration approval

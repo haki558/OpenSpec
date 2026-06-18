@@ -82,7 +82,7 @@ out
 .nuxt
 
 # Build output
-dist/
+# dist/ is committed for git-based npm installs (same content as npm registry publish)
 
 # Gatsby files
 .cache/

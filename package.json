@@ -1,7 +1,7 @@
 {
-  "name": "@fission-ai/openspec",
-  "version": "1.4.1",
-  "description": "AI-native system for spec-driven development",
+  "name": "@lennox/openspec",
+  "version": "1.4.1-lennox.1",
+  "description": "AI-native system for spec-driven development (Lennox SDD fork)",
   "keywords": [
     "openspec",
     "specs",
@@ -9,10 +9,10 @@
     "ai",
     "development"
   ],
-  "homepage": "https://github.com/Fission-AI/OpenSpec",
+  "homepage": "https://github.com/haki558/OpenSpec",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Fission-AI/OpenSpec"
+    "url": "https://github.com/haki558/OpenSpec"
   },
   "license": "MIT",
   "author": "OpenSpec Contributors",
@@ -48,9 +48,10 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:postinstall": "node scripts/postinstall.js",
-    "prepare": "pnpm run build",
-    "prepublishOnly": "pnpm run build",
-    "postinstall": "node scripts/postinstall.js",
+    "prepack": "echo 'packaging openspec'",
+    "prepare": "echo 'openspec ready'",
+    "prepublishOnly": "node build.js",
+    "postinstall": "node scripts/postinstall.js || true",
     "check:pack-version": "node scripts/pack-version-check.mjs",
     "release": "pnpm run release:ci",
     "release:ci": "pnpm run check:pack-version && pnpm exec changeset publish",

@@ -1,0 +1,1 @@
+{"version":3,"file":"context-status.d.ts","sourceRoot":"","sources":["../../../src/commands/workspace/context-status.ts"],"names":[],"mappings":"AAUA,OAAO,EAEL,KAAK,qBAAqB,EAC3B,MAAM,+BAA+B,CAAC;AACvC,OAAO,EAAE,eAAe,EAA8B,MAAM,YAAY,CAAC;AAWzE,wBAAsB,+BAA+B,CACnD,OAAO,EAAE,qBAAqB,GAAG,IAAI,GACpC,OAAO,CAAC,eAAe,EAAE,CAAC,CAiE5B"}
